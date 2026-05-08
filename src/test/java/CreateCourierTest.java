@@ -1,35 +1,36 @@
+
+// С помощью класса был создан курьер, который будет использоваться в нескольких последующих тестах
+
+
+import Steps.CourierSteps;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
+import io.qameta.allure.Step;
 import io.restassured.response.Response;
 import org.junit.Test;
-
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 
-public class CreateCourierTest extends BaseTestApi {
-  private static final String CREATEUSERENDPOINT = "/api/v1/courier";
+public class CreateCourierTest extends CourierSteps {
 
+    @Test
+    @Feature("Курьеры")
+    @Description("Проверка создания курьера с заданным вручную логином")
+    public void testCreateCourier() {
+        String login = "182Blink182";
+        String password = "182";
+        String firstName = "Travis"; // добавляем имя курьера
 
-  @Test
-  @Feature("Курьеры")
-  @Description("Проверка создания курьера с заданным вручную логином")
-  public void testCreateCourier() {
-// Данный логин (dvgfdsgwfswa) уже ранее был использован для регистрации, так что будет ошибка
-// Если удалить логин или пароль, то появляется ошибка "Недостаточно данных для создания учётной записи"
-    CourierTestData courierData = new CourierTestData("dvgfdsgwfswa", "password123", "Пётр");
+        Response createResponse = createCourier(login, password, firstName);
+        checkResponse(createResponse, 201, true);
 
-    Response response = given()
-            .spec(requestSpec) // использовать из BaseTestApi
-            .body(courierData)
-            .log().all()
-            .when()
-            .post(CREATEUSERENDPOINT)
-            .then()
-            .log().ifError() // логировать ответ при ошибке
-            .extract().response();
+        // Сохранить ID для автоматического удаления после теста
+        courierIdToDelete = authorizeCourier(login, password); // передаём login и password
+    }
 
-    response.then()
-            .statusCode(201)
-            .body("ok", equalTo(true));
-  }
+    @Step("Проверка ответа: статус-код = {statusCode}, ok = {okValue}")
+    private void checkResponse(Response response, int statusCode, boolean okValue) {
+        response.then()
+                .statusCode(statusCode)
+                .body("ok", equalTo(okValue));
+    }
 }
