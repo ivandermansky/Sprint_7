@@ -1,4 +1,15 @@
+/*
+
+1. Тест создает курьера со случайным логином с помощью currentTimeMillis()
+2. Тест авторизует курьера
+3. Тест удаляет курьера
+
+
+ */
+
+import Steps.CourierSteps;
 import io.restassured.response.Response;
+import models.CourierTestData;
 import org.junit.Test;
 
 import io.qameta.allure.Step;
@@ -9,10 +20,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
-public class CreateCourierWithRandomNameAuthAndDeleteTest extends BaseTestApi {
-    private static final String CREATECOURIERENDPOINT = "/api/v1/courier";
-    private static final String AUTHCOURIERENDPOINT = "/api/v1/courier/login";
-    private static final String DELETECOURIERENDPOINT = "/api/v1/courier/{courierId}";
+public class CreateCourierWithRandomNameAuthAndDeleteTest extends CourierSteps {
 
     @Test
     @Feature("Курьеры")
@@ -21,13 +29,12 @@ public class CreateCourierWithRandomNameAuthAndDeleteTest extends BaseTestApi {
         String uniqueLogin = "testcourier_" + System.currentTimeMillis();
 
         Response createResponse = createCourier(uniqueLogin);
-        int courierId = authorizeCourier(uniqueLogin);
-        deleteCourier(courierId);
+        // Сохранить ID для автоматического удаления после теста
+        courierIdToDelete = authorizeCourier(uniqueLogin);
     }
 
     @Step("Создание курьера со случайным логином: {login}")
     protected Response createCourier(String login) {
-        // Создать объект CourierTestData
         CourierTestData courierData = new CourierTestData(
                 login,
                 "password123",
@@ -36,10 +43,10 @@ public class CreateCourierWithRandomNameAuthAndDeleteTest extends BaseTestApi {
 
         return given()
                 .spec(requestSpec)
-                .body(courierData)  // передать объект CourierTestData
+                .body(courierData)
                 .log().all()
                 .when()
-                .post(CREATECOURIERENDPOINT)
+                .post(CREATE_COURIER_ENDPOINT)
                 .then()
                 .log().ifError()
                 .log().all()
@@ -50,38 +57,21 @@ public class CreateCourierWithRandomNameAuthAndDeleteTest extends BaseTestApi {
 
     @Step("Авторизация курьера для получения ID: {login}")
     protected int authorizeCourier(String login) {
-
         CourierTestData authData = new CourierTestData();
         authData.setLogin(login);
         authData.setPassword("password123");
-        // firstName не нужен для авторизации, можно оставить пустым
 
         Response authResponse = given()
                 .spec(requestSpec)
-                .body(authData)  // передать объект CourierTestData
+                .body(authData)
                 .log().all()
                 .when()
-                .post(AUTHCOURIERENDPOINT)
+                .post(AUTH_COURIER_ENDPOINT)
                 .then()
                 .statusCode(200)
                 .body("id", notNullValue())
                 .extract().response();
 
         return authResponse.jsonPath().getInt("id");
-    }
-
-    @Step("Удаление курьера по ID: {courierId}")
-    protected void deleteCourier(int courierId) {
-        given()
-                .spec(requestSpec)
-                .pathParam("courierId", courierId)
-                .log().all()
-                .when()
-                .delete(DELETECOURIERENDPOINT)
-                .then()
-                .log().ifError()
-                .log().all()
-                .statusCode(200)
-                .body("ok", equalTo(true));
     }
 }
