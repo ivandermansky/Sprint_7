@@ -1,3 +1,5 @@
+// Добавлена проверка с передачей 2 цветов сразу
+
 import io.qameta.allure.Step;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Description;
@@ -16,7 +18,7 @@ import static org.hamcrest.Matchers.notNullValue;
 @RunWith(Parameterized.class)
 @Feature("Заказы")
 public class OrderTest extends BaseTestApi {
-    private static final String ORDERENDPOINT = "/api/v1/orders";
+    private static final String ORDER_ENDPOINT = "/api/v1/orders";
 
     private final String testDescription;
     private final OrderTestData orderData;
@@ -26,7 +28,7 @@ public class OrderTest extends BaseTestApi {
         this.orderData = orderData;
     }
 
-    // Параметризованный тест с тремя наборами тестовых данных
+    // Параметризованный тест с четырьмя наборами тестовых данных. Четвёртый будет проверять передачу 2 цветов сразу
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> provideTestData() {
         return Arrays.asList(
@@ -41,6 +43,10 @@ public class OrderTest extends BaseTestApi {
                 new Object[] {
                         "Тестовые данные для заказа: Виолетта Петрова",
                         new OrderTestData("Виолетта", "Петрова", "Уральская 44", 3, "+7 888 777 88 77", 3, "2026-06-07", "Хочу самокат", List.of())
+                },
+                new Object[] {
+                        "Тестовые данные для заказа: Александр Семёнов",
+                        new OrderTestData("Александр", "Семёнов", "Севастопольская 100", 5, "+ 7 123 444 33 88", 2, "2026-07-07", "Я просто люблю самокаты", List.of("BLACK", "GREY"))
                 }
         );
     }
@@ -59,7 +65,7 @@ public class OrderTest extends BaseTestApi {
                 .body(orderData)
                 .log().all()
                 .when()
-                .post(ORDERENDPOINT)
+                .post(ORDER_ENDPOINT)
                 .then()
                 .log().ifError()
                 .extract().response();
