@@ -1,36 +1,45 @@
+
+// Тест используется для получения списка заказов курьера по id курьера. Здесь есть баг - система возвращает ответ не в ожидаемом формате
+
+package test;
+
+import Steps.OrderSteps;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
+import io.qameta.allure.Step;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import io.restassured.response.Response;
+import models.BaseTestApi;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 
+@Feature("Заказы")
 public class GetOrdersTest extends BaseTestApi {
-    private static final String GETORDERSENDPOINT = "/api/v1/orders";
+
+    // Создать экземпляр OrderSteps
+    private static OrderSteps orderSteps;
+
+    @BeforeClass
+    public static void setup() {
+        BaseTestApi.setup();
+        orderSteps = new OrderSteps(requestSpec);
+    }
 
     @Test
-    @Feature("Заказы")
     @Description("Получение списка заказов для курьера с ID 741324")
     public void testGetOrdersForCourier() {
-        // Создать объект с тестовыми данными
-        GetOrdersTestData testData = new GetOrdersTestData(
-                741324,           // courierId
-                "",     // nearestStation
-                0,              // number (количество заказов)
-                0                // page (номер страницы)
-        );
+        // Вызвать метод из OrderSteps — получаем Response
+        Response response = orderSteps.getOrdersForCourierWithDefaultData();
 
-        given()
-                .spec(requestSpec)
-                .queryParam("courierId", testData.getCourierId())
-                .queryParam("nearestStation", testData.getNearestStation())
-                .queryParam("number", testData.getNumber())
-                .queryParam("page", testData.getPage())
-                .log().all()
-                .when()
-                .get(GETORDERSENDPOINT)
-                .then()
+        // Проверить ответ в тестовом классе — вся логика проверок здесь
+        checkGetOrdersResponse(response);
+    }
+
+    @Step("Проверка ответа получения списка заказов: статус-код 200, наличие заказов")
+    private void checkGetOrdersResponse(Response response) {
+        response.then()
                 .log().ifError()
                 .log().all()
                 .statusCode(200)
