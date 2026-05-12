@@ -1,3 +1,5 @@
+package models;
+
 public class GetOrdersTestData {
     private int courierId;
     private String nearestStation;
