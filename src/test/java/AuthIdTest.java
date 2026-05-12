@@ -1,69 +1,65 @@
 // Тест проверяет, что при авторизации курьера возвращается id курьера
 
+package test;
 
+import Steps.CourierSteps;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Step;
 import io.restassured.response.Response;
-import models.CourierTestData;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @Feature("Авторизация курьеров")
-public class AuthIdTest extends BaseTestApi {
+public class AuthIdTest {
 
     // Данные существующего пользователя
     private static final String EXISTING_LOGIN = "182Blink182";
     private static final String EXISTING_PASSWORD = "182";
 
+    // Создать экземпляр CourierSteps
+    private static CourierSteps courierSteps;
+
+    @BeforeClass
+    public static void setup() {
+        // Инициализировать requestSpec через метод setup в CourierSteps
+        CourierSteps.setup();
+        courierSteps = new CourierSteps();
+    }
+
     @Test
     @Description("Проверка успешной авторизации существующего курьера и возврата корректного ID")
     public void testSuccessfulAuthWithIdValidation() {
-        // Формировать данные для авторизации
-        CourierTestData authData = new CourierTestData();
-        authData.setLogin(EXISTING_LOGIN);
-        authData.setPassword(EXISTING_PASSWORD);
+        // Отправить запрос на авторизацию через метод из CourierSteps
+        Response response = courierSteps.authorizeCourier(EXISTING_LOGIN, EXISTING_PASSWORD);
 
-        // Отправить запрос на авторизацию
-        Response response = sendAuthRequest(authData);
-
-        // Дополнительная проверка: извлечь ID и вывести в лог
-        Integer userId = response.jsonPath().get("id");
-        System.out.println("Полученный ID пользователя: " + userId);
-
-        // Убедиться, что ID действительно число и больше нуля (дополнительная проверка)
-        validateUserId(userId);
+        // Проверки в тестовом классе
+        checkSuccessfulAuthResponse(response);
+        validateUserIdInResponse(response);
     }
 
-    @Step("Отправка запроса авторизации с данными: login={login}, password={password}")
-    private Response sendAuthRequest(CourierTestData authData) {
-        return given()
-                .spec(requestSpec)
-                .body(authData)
-                .log().all() // логировать отправляемые данные и ответ
-                .when()
-                .post(LOGIN_ENDPOINT)
-                .then()
+    @Step("Проверка успешного ответа авторизации: статус 200 и наличие поля id")
+    private void checkSuccessfulAuthResponse(Response response) {
+        response.then()
                 .log().all()
                 .statusCode(200)
-                // Проверить, что ID существует
-                .body("id", notNullValue())
-                // Проверить, что ID — число
-                .body("id", is(greaterThan(-1)))
-                // Дополнительно проверить, что ID больше нуля
-                .body("id", greaterThan(0))
-                .extract().response();
+                .body("id", notNullValue());
     }
 
-    @Step("Валидация ID пользователя: {userId}")
-    private void validateUserId(Integer userId) {
+    @Step("Валидация ID пользователя в ответе")
+    private void validateUserIdInResponse(Response response) {
+        Integer userId = response.jsonPath().get("id");
+
+        System.out.println("Полученный ID пользователя: " + userId);
+
         if (userId == null) {
             throw new AssertionError("ID пользователя не должен быть null");
         }
+
         if (userId <= 0) {
             throw new AssertionError("ID пользователя должен быть больше нуля, но получен: " + userId);
         }
