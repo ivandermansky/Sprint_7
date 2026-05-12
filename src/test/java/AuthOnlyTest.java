@@ -5,47 +5,52 @@
 - для теста, который проверяет возвращение id при авторизации
 */
 
+
+package test;
+
+import Steps.CourierSteps;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Step;
 import io.restassured.response.Response;
-import models.CourierTestData;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.notNullValue;
 
 @Feature("Авторизация курьеров")
-public class AuthOnlyTest extends BaseTestApi {
+public class AuthOnlyTest {
 
     // Данные существующего пользователя
     private static final String EXISTING_LOGIN = "182Blink182";
     private static final String EXISTING_PASSWORD = "182";
 
+    // Создать экземпляр CourierSteps
+    private static CourierSteps courierSteps;
+
+    @BeforeClass
+    public static void setup() {
+        // Инициализировать requestSpec через метод setup в CourierSteps
+        CourierSteps.setup();
+        courierSteps = new CourierSteps();
+    }
+
     @Test
     @Description("Проверка успешной авторизации существующего курьера")
     public void testSuccessfulAuth() {
-        // Формировать данные для авторизации
-        CourierTestData authData = new CourierTestData();
-        authData.setLogin(EXISTING_LOGIN);
-        authData.setPassword(EXISTING_PASSWORD);
+        // Отправить запрос на авторизацию через метод из CourierSteps
+        Response response = courierSteps.authorizeCourier(EXISTING_LOGIN, EXISTING_PASSWORD);
 
-        // Отправить запрос на авторизацию через аннотированный метод
-        Response response = sendAuthRequest(authData);
+        // Проверить ответ в тестовом классе
+        checkSuccessfulAuthResponse(response);
     }
 
-    @Step("Отправка запроса авторизации с логином '{login}' и паролем '{password}'")
-    private Response sendAuthRequest(CourierTestData authData) {
-        return given()
-                .spec(requestSpec)
-                .body(authData)
-                .log().all() // логировать отправляемые данные и ответ
-                .when()
-                .post(LOGIN_ENDPOINT)
-                .then()
+    @Step("Проверка успешного ответа авторизации: статус 200 и наличие поля 'id'")
+    private void checkSuccessfulAuthResponse(Response response) {
+        response.then()
+                .log().ifError()
                 .log().all()
                 .statusCode(200)
-                .body("id", notNullValue())
-                .extract().response();
+                .body("id", notNullValue());
     }
 }
