@@ -1,9 +1,20 @@
-// Добавлена проверка с передачей 2 цветов сразу
+
+
+/* Параметризованный тест для проверки создания заказа. Содержит четыре набора данных:
+        - Первый делает заказ с цветом BLACK;
+        - Второй делает заказ с цветом GREY;
+        - В третьем заказе цвет не указан;
+        - В четвёртомм делается заказ сразу для двух цветов
+        Тело ответа содержит `track`
+*/
+
 
 import io.qameta.allure.Step;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Description;
 import io.restassured.response.Response;
+import models.BaseTestApi;
+import models.OrderTestData;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -61,7 +72,7 @@ public class OrderTest extends BaseTestApi {
     @Step("Создание заказа: {testDescription}")
     protected Response createOrder(OrderTestData orderData) {
         return given()
-                .spec(requestSpec) // использовать из BaseTestApi
+                .spec(requestSpec) // использовать из models.BaseTestApi
                 .body(orderData)
                 .log().all()
                 .when()
