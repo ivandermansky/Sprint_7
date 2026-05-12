@@ -1,3 +1,6 @@
+
+package models;
+
 public class CourierTestData {
     private String login;
     private String password;
